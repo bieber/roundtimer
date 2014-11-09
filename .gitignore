@@ -1,0 +1,12 @@
+bin/
+gen/
+build/
+
+*.apk
+*.ap_
+*.dex
+*.class
+
+local.properties
+.idea/workspace.xml
+.gradle
