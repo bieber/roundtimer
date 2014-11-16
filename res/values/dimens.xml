@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="time_label_right_margin">5dp</dimen>
+    <dimen name="time_label_left_margin">5dp</dimen>
+
+    <dimen name="time_output_left_margin">5dp</dimen>
+
+    <dimen name="time_seekbar_left_margin">5dp</dimen>
+    <dimen name="time_seekbar_right_margin">5dp</dimen>
 </resources>

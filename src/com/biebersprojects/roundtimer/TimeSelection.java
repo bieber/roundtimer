@@ -1,68 +1,110 @@
+/*
+ *  This file is part of roundtimer.
+ *
+ *  roundtimer is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  roundtimer is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with roundtimer.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.biebersprojects.roundtimer;
 
 import android.app.Activity;
-import android.content.SharedPreferences;
+import android.content.Intent;
 import android.os.Bundle;
-import android.widget.SeekBar;
-import android.widget.TextView;
+import android.view.View;
+import android.widget.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class TimeSelection
     extends Activity
-    implements SeekBar.OnSeekBarChangeListener {
+    implements SeekBar.OnSeekBarChangeListener, Button.OnClickListener {
 
-    private static Map<Integer, Integer> OUTPUT_LABELS;
-    static {
-        OUTPUT_LABELS = new HashMap<Integer, Integer>();
-        OUTPUT_LABELS.put(R.id.prepTimeSeekBar, R.id.prepTimeOutput);
-        OUTPUT_LABELS.put(R.id.roundTimeSeekBar, R.id.roundTimeOutput);
-        OUTPUT_LABELS.put(R.id.restTimeSeekBar, R.id.restTimeOutput);
-    }
-
-    private static Map<Integer, Integer> INTERVALS;
-    static {
-        INTERVALS = new HashMap<Integer, Integer>();
-        INTERVALS.put(R.id.prepTimeSeekBar, 15);
-        INTERVALS.put(R.id.roundTimeSeekBar, 30);
-        INTERVALS.put(R.id.restTimeSeekBar, 30);
-    }
-
-    private static Map<Integer, String> PREFERENCE_KEYS;
-    static {
-        PREFERENCE_KEYS = new HashMap<Integer, String>();
-        PREFERENCE_KEYS.put(R.id.prepTimeSeekBar, "prep_time");
-        PREFERENCE_KEYS.put(R.id.roundTimeSeekBar, "round_time");
-        PREFERENCE_KEYS.put(R.id.restTimeSeekBar, "rest_time");
-    }
-
-    private static Map<Integer, Integer> DEFAULT_TIMES;
-    static {
-        DEFAULT_TIMES = new HashMap<Integer, Integer>();
-        DEFAULT_TIMES.put(R.id.prepTimeSeekBar, 30);
-        DEFAULT_TIMES.put(R.id.roundTimeSeekBar, 120);
-        DEFAULT_TIMES.put(R.id.restTimeSeekBar, 60);
-    }
+    private static final Map<TimerPhase, TextView> outputLabels =
+        new HashMap<TimerPhase, TextView>();
+    private static final Map<TimerPhase, SeekBar> inputBars =
+        new HashMap<TimerPhase, SeekBar>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.timeselection);
 
-        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-
-        for (int id: OUTPUT_LABELS.keySet()) {
-            SeekBar bar = (SeekBar)findViewById(id);
-            bar.setOnSeekBarChangeListener(this);
-            this.setTime(
-                bar,
-                preferences.getInt(
-                    PREFERENCE_KEYS.get(bar.getId()),
-                    DEFAULT_TIMES.get(bar.getId())
-                )
-            );
+        TableLayout inputTable = (TableLayout)findViewById(R.id.inputTable);
+        for (TimerPhase p: TimerPhase.values()) {
+            this.setupRow(inputTable, p);
         }
+
+        Button startButton = (Button)findViewById(R.id.startButton);
+        startButton.setOnClickListener(this);
+    }
+
+    private void setupRow(TableLayout inputTable, TimerPhase phase) {
+        addLabelRow(inputTable, phase);
+        addSeekBarRow(inputTable, phase);
+        setTime(
+            phase,
+            getPreferences(MODE_PRIVATE).getInt(
+                phase.getConfigKey(),
+                phase.getDefaultTime()
+            )
+        );
+    }
+
+    private void addLabelRow(TableLayout inputTable, TimerPhase phase) {
+        TextView label = new TextView(this);
+        label.setText(getText(phase.getInputLabel())+":");
+        label.setTextAppearance(this, android.R.style.TextAppearance_Large);
+
+        TableRow.LayoutParams labelLayout = new TableRow.LayoutParams(0);
+        labelLayout.setMarginStart(getDim(R.dimen.time_label_left_margin));
+        labelLayout.setMarginEnd(getDim(R.dimen.time_label_right_margin));
+        label.setLayoutParams(labelLayout);
+
+        TextView outputLabel = new TextView(this);
+        outputLabels.put(phase, outputLabel);
+        outputLabel.setTextAppearance(
+            this,
+            android.R.style.TextAppearance_Large
+        );
+
+        TableRow.LayoutParams outputLabelLayout = new TableRow.LayoutParams(1);
+        outputLabelLayout.setMarginStart(
+            getDim(R.dimen.time_output_left_margin)
+        );
+        outputLabel.setLayoutParams(outputLabelLayout);
+
+        TableRow row = new TableRow(this);
+        row.addView(label);
+        row.addView(outputLabel);
+        inputTable.addView(row);
+    }
+
+    private void addSeekBarRow(TableLayout inputTable, TimerPhase phase) {
+        SeekBar bar = new SeekBar(this);
+        inputBars.put(phase, bar);
+        bar.setMax(phase.getMaximum());
+        bar.setOnSeekBarChangeListener(this);
+
+        TableRow.LayoutParams layoutParams = new TableRow.LayoutParams(0);
+        layoutParams.weight = 1;
+        layoutParams.setMarginStart(getDim(R.dimen.time_seekbar_left_margin));
+        layoutParams.setMarginEnd(getDim(R.dimen.time_seekbar_right_margin));
+        bar.setLayoutParams(layoutParams);
+
+        TableRow row = new TableRow(this);
+        row.addView(bar);
+        inputTable.addView(row);
     }
 
     @Override
@@ -74,39 +116,55 @@ public class TimeSelection
         if (!fromUser) {
             return;
         }
-        this.setTime(seekBar, progress);
+        for (TimerPhase p: TimerPhase.values()) {
+            if (inputBars.get(p) == seekBar) {
+                setTime(p, progress);
+                return;
+            }
+        }
     }
 
-    private void setTime(SeekBar input, int value) {
-        int newValue = snapToInterval(value, INTERVALS.get(input.getId()));
-        input.setProgress(newValue);
+    @Override
+    public void onClick(View v) {
+        if (v.getId() == R.id.startButton) {
+            Intent timer = new Intent(this, Timer.class);
+            for (TimerPhase p: TimerPhase.values()) {
+                timer.putExtra(
+                    p.getBundleConfigKey(),
+                    inputBars.get(p).getProgress()
+                );
+            }
+            startActivity(timer);
+        }
+    }
 
-        int minutes = newValue / 60;
-        int seconds = newValue % 60;
-        int outputID = OUTPUT_LABELS.get(input.getId());
-        TextView outputLabel = (TextView)findViewById(outputID);
-        outputLabel.setText(String.format("%02d:%02d", minutes, seconds));
+    private void setTime(TimerPhase phase, int time) {
+        time = snapToInterval(time, phase.getAdjustmentInterval());
+        if (time == 0 && phase != TimerPhase.PREP) {
+            time = phase.getAdjustmentInterval();
+        }
 
-        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        preferences
+        outputLabels.get(phase)
+            .setText(String.format("%02d:%02d", time / 60, time % 60));
+        inputBars.get(phase).setProgress(time);
+
+        getPreferences(MODE_PRIVATE)
             .edit()
-            .putInt(PREFERENCE_KEYS.get(input.getId()), newValue)
+            .putInt(phase.getConfigKey(), time)
             .apply();
     }
 
+    private int getDim(int id) {
+        return (int)getResources().getDimension(id);
+    }
+
     private static int snapToInterval(int x, int interval) {
-        double floatQuotient = (double)x / interval;
-        int lower = (int)Math.floor(floatQuotient) * interval;
-        int upper = (int)Math.ceil(floatQuotient) * interval;
-        if (upper - x < x - lower) {
-            return upper;
-        } else {
-            return lower;
-        }
+        return ((int)Math.round((double)x / interval)) * interval;
     }
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {}
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {}
+
 }
