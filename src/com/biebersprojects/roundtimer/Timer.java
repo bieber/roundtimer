@@ -40,6 +40,7 @@ public class Timer
         Button.OnClickListener,
         AudioManager.OnAudioFocusChangeListener,
         MediaPlayer.OnCompletionListener {
+
     private static final String PHASE_KEY = "PHASE";
     private static final String START_TIME_KEY = "START_TIME";
     private static final String PAUSED_TIME_KEY = "PAUSED_TIME";
@@ -184,8 +185,7 @@ public class Timer
     }
 
     private void tick() {
-        TextView timeLabel = (TextView)findViewById(R.id.timeLabel);
-        TextView phaseLabel = (TextView)findViewById(R.id.phaseLabel);
+        ClockView clock = (ClockView)findViewById(R.id.display);
 
         float now = pausedTime > 0
             ? startTime + pausedTime
@@ -197,14 +197,8 @@ public class Timer
         if (wholeSecondsLeft < 0) {
             wholeSecondsLeft = 0;
         }
-        timeLabel.setText(
-            String.format(
-                "%02d:%02d",
-                wholeSecondsLeft / 60,
-                wholeSecondsLeft % 60
-            )
-        );
-        phaseLabel.setText(getText(phase.getTimerLabel()));
+        clock.setSecondsLeft(wholeSecondsLeft);
+        clock.setPhase(phase);
 
         if (secondsLeft <= 0) {
             changePhase();

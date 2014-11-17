@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="prep_color">#ffd800</color>
+    <color name="round_color">#2ee718</color>
+    <color name="rest_color">#ea151b</color>
+    <color name="border_color">#bdbdbd</color>
+    <color name="text_color">#ffffff</color>
+    <color name="text_stroke_color">#bdbdbd</color>
+</resources>

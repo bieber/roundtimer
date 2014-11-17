@@ -17,6 +17,8 @@
 
 package com.biebersprojects.roundtimer;
 
+import android.graphics.Color;
+
 public enum TimerPhase {
     PREP(
         R.string.prep_time_input_label,
@@ -24,7 +26,8 @@ public enum TimerPhase {
         30,
         15,
         120,
-        "PREP_TIME"
+        "PREP_TIME",
+        R.color.prep_color
     ),
     ROUND(
         R.string.round_time_input_label,
@@ -32,7 +35,8 @@ public enum TimerPhase {
         120,
         30,
         300,
-        "ROUND_TIME"
+        "ROUND_TIME",
+        R.color.round_color
     ),
     REST(
         R.string.rest_time_input_label,
@@ -40,7 +44,8 @@ public enum TimerPhase {
         60,
         30,
         300,
-        "REST_TIME"
+        "REST_TIME",
+        R.color.rest_color
     );
 
     private int inputLabel;
@@ -49,6 +54,7 @@ public enum TimerPhase {
     private int adjustmentInterval;
     private int maximum;
     private String configKey;
+    private int color;
 
     TimerPhase(
         int inputLabel,
@@ -56,7 +62,8 @@ public enum TimerPhase {
         int defaultTime,
         int adjustmentInterval,
         int maximum,
-        String configKey
+        String configKey,
+        int color
     ) {
         this.inputLabel = inputLabel;
         this.timerLabel = timingLabel;
@@ -64,6 +71,7 @@ public enum TimerPhase {
         this.adjustmentInterval = adjustmentInterval;
         this.maximum = maximum;
         this.configKey = configKey;
+        this.color = color;
     }
 
     public int getInputLabel() {
@@ -88,6 +96,10 @@ public enum TimerPhase {
 
     public String getConfigKey() {
         return configKey;
+    }
+
+    public int getColor() {
+        return color;
     }
 
     public String getBundleConfigKey() {
