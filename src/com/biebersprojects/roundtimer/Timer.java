@@ -18,7 +18,10 @@
 package com.biebersprojects.roundtimer;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.View;
@@ -31,7 +34,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class Timer extends Activity implements Button.OnClickListener {
+public class Timer
+    extends Activity
+    implements
+        Button.OnClickListener,
+        AudioManager.OnAudioFocusChangeListener,
+        MediaPlayer.OnCompletionListener {
     private static final String PHASE_KEY = "PHASE";
     private static final String START_TIME_KEY = "START_TIME";
     private static final String PAUSED_TIME_KEY = "PAUSED_TIME";
@@ -44,6 +52,7 @@ public class Timer extends Activity implements Button.OnClickListener {
     private float pausedTime = 0;
 
     private ScheduledFuture<?> ticker = null;
+    private MediaPlayer alertPlayer = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -136,6 +145,44 @@ public class Timer extends Activity implements Button.OnClickListener {
         }
     }
 
+    @Override
+    public void onAudioFocusChange(int focusChange) {
+        if (alertPlayer == null) {
+            return;
+        }
+
+        switch (focusChange) {
+            case AudioManager.AUDIOFOCUS_GAIN:
+                alertPlayer.setVolume(1.0f, 1.0f);
+                if (!alertPlayer.isPlaying()) {
+                    alertPlayer.start();
+                }
+                break;
+
+            case AudioManager.AUDIOFOCUS_LOSS:
+                alertPlayer.stop();
+                alertPlayer.release();
+                alertPlayer = null;
+                break;
+
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                alertPlayer.pause();
+                break;
+
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                alertPlayer.setVolume(0.5f, 0.5f);
+                break;
+        }
+    }
+
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+        mp.release();
+        alertPlayer = null;
+        ((AudioManager)getSystemService(Context.AUDIO_SERVICE))
+            .abandonAudioFocus(this);
+    }
+
     private void tick() {
         TextView timeLabel = (TextView)findViewById(R.id.timeLabel);
         TextView phaseLabel = (TextView)findViewById(R.id.phaseLabel);
@@ -167,5 +214,22 @@ public class Timer extends Activity implements Button.OnClickListener {
     private void changePhase() {
         startTime = SystemClock.elapsedRealtime();
         phase = phase.next();
+
+        int gotFocus = ((AudioManager)getSystemService(Context.AUDIO_SERVICE))
+            .requestAudioFocus(
+                this,
+                AudioManager.STREAM_NOTIFICATION,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+            );
+        if (gotFocus != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            return;
+        }
+
+        int alertTone = phase == TimerPhase.ROUND
+            ? R.raw.round_tone
+            : R.raw.rest_tone;
+        alertPlayer = MediaPlayer.create(this, alertTone);
+        alertPlayer.setOnCompletionListener(this);
+        alertPlayer.start();
     }
 }

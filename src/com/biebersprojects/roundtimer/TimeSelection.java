@@ -67,8 +67,8 @@ public class TimeSelection
         label.setTextAppearance(this, android.R.style.TextAppearance_Large);
 
         TableRow.LayoutParams labelLayout = new TableRow.LayoutParams(0);
-        labelLayout.setMarginStart(getDim(R.dimen.time_label_left_margin));
-        labelLayout.setMarginEnd(getDim(R.dimen.time_label_right_margin));
+        labelLayout.leftMargin = getDim(R.dimen.time_label_left_margin);
+        labelLayout.rightMargin = getDim(R.dimen.time_label_right_margin);
         label.setLayoutParams(labelLayout);
 
         TextView outputLabel = new TextView(this);
@@ -79,9 +79,7 @@ public class TimeSelection
         );
 
         TableRow.LayoutParams outputLabelLayout = new TableRow.LayoutParams(1);
-        outputLabelLayout.setMarginStart(
-            getDim(R.dimen.time_output_left_margin)
-        );
+        outputLabelLayout.leftMargin = getDim(R.dimen.time_output_left_margin);
         outputLabel.setLayoutParams(outputLabelLayout);
 
         TableRow row = new TableRow(this);
@@ -98,8 +96,8 @@ public class TimeSelection
 
         TableRow.LayoutParams layoutParams = new TableRow.LayoutParams(0);
         layoutParams.weight = 1;
-        layoutParams.setMarginStart(getDim(R.dimen.time_seekbar_left_margin));
-        layoutParams.setMarginEnd(getDim(R.dimen.time_seekbar_right_margin));
+        layoutParams.leftMargin = getDim(R.dimen.time_seekbar_left_margin);
+        layoutParams.rightMargin = getDim(R.dimen.time_seekbar_right_margin);
         bar.setLayoutParams(layoutParams);
 
         TableRow row = new TableRow(this);
@@ -151,7 +149,7 @@ public class TimeSelection
         getPreferences(MODE_PRIVATE)
             .edit()
             .putInt(phase.getConfigKey(), time)
-            .apply();
+            .commit();
     }
 
     private int getDim(int id) {
