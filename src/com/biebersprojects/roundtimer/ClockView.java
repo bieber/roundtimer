@@ -26,12 +26,16 @@ public class ClockView extends View {
     private static final float borderRatio = 0.02f;
     private static final float cornerRatio = 0.04f;
     private static final float textPaddingRatio = 0.2f;
-    private static final float textStrokeRatio = 0.003f;
+    private static final float textStrokeRatio = 0.02f;
     private static final float textTimeSplitRatio = 1/3.f;
 
-    private RectF bound = new RectF();
-    private RectF labelBound = new RectF();
+    private RectF outerBound = new RectF();
     private Rect measuredSize = new Rect();
+
+    private RectF roundLabelBound = new RectF();
+    private RectF timeLabelBound = new RectF();
+    float roundFontSize = 0;
+    float timeFontSize = 0;
 
     private Paint backgroundPaint = new Paint();
     private Paint borderPaint = new Paint();
@@ -66,13 +70,19 @@ public class ClockView extends View {
     }
 
     public void setSecondsLeft(int secondsLeft) {
+        int oldSecondsLeft = this.secondsLeft;
         this.secondsLeft = secondsLeft;
-        invalidate();
+        if (secondsLeft != oldSecondsLeft) {
+            invalidate();
+        }
     }
 
     public void setPhase(TimerPhase phase) {
+        TimerPhase oldPhase = this.phase;
         this.phase = phase;
-        invalidate();
+        if (phase != oldPhase) {
+            invalidate();
+        }
     }
 
     @Override
@@ -80,6 +90,55 @@ public class ClockView extends View {
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
         setMeasuredDimension(width, height);
+
+        float minDim = width < height ? width : height;
+        float labelBoundary = height * textTimeSplitRatio;
+        float textPadding = minDim * textPaddingRatio;
+
+        String[] roundLabels = new String[TimerPhase.values().length];
+        for (TimerPhase p: TimerPhase.values()) {
+            String label = getContext()
+                .getResources()
+                .getString(p.getTimerLabel());
+            roundLabels[p.ordinal()] = label;
+        }
+
+        roundLabelBound.set(
+            textPadding / 2,
+            textPadding / 2,
+            width - textPadding / 2,
+            labelBoundary - textPadding / 2
+        );
+        roundFontSize = getFontSize(roundLabelBound, textPaint, roundLabels);
+
+
+        timeLabelBound.set(
+            textPadding / 2,
+            labelBoundary + textPadding / 2,
+            width - textPadding / 2,
+            height - textPadding
+        );
+        timeFontSize = getFontSize(timeLabelBound, textPaint, timeStrings);
+    }
+
+    float getFontSize(RectF bounds, Paint paint, String[] options) {
+        paint.setTextSize(50);
+        float maxWidth = 0;
+        float maxHeight = 0;
+
+        for (String s: options) {
+            paint.getTextBounds(s, 0, s.length(), measuredSize);
+            if (measuredSize.width() > maxWidth) {
+                maxWidth = measuredSize.width();
+            }
+            if (measuredSize.height() > maxHeight) {
+                maxHeight = measuredSize.height();
+            }
+        }
+
+        float widthRatio = bounds.width() / maxWidth;
+        float heightRatio = bounds.height() / maxHeight;
+        return Math.min(widthRatio, heightRatio) * 50;
     }
 
     @Override
@@ -90,7 +149,7 @@ public class ClockView extends View {
 
         float borderWidth = borderRatio * minDim;
         float cornerRadius = cornerRatio * minDim;
-        bound.set(
+        outerBound.set(
             borderWidth,
             borderWidth,
             width - borderWidth,
@@ -111,89 +170,47 @@ public class ClockView extends View {
         borderPaint.setAntiAlias(true);
 
         canvas.drawRoundRect(
-            bound,
+            outerBound,
             cornerRadius,
             cornerRadius,
             backgroundPaint
         );
-        canvas.drawRoundRect(bound, cornerRadius, cornerRadius, borderPaint);
-
-        textPaint.setAntiAlias(true);
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setColor(
-            getContext().getResources().getColor(R.color.text_color)
+        canvas.drawRoundRect(
+            outerBound,
+            cornerRadius,
+            cornerRadius,
+            borderPaint
         );
 
-        String[] labels = new String[TimerPhase.values().length];
-        String label = null;
-        for (TimerPhase p: TimerPhase.values()) {
-            String thisLabel = getContext()
-                .getResources()
-                .getString(p.getTimerLabel());
-            labels[p.ordinal()] = thisLabel;
-            if (p == phase) {
-                label = thisLabel;
-            }
-        }
+        String roundText = getContext()
+            .getResources()
+            .getString(phase.getTimerLabel());
+        drawText(canvas, roundText, roundFontSize, roundLabelBound);
 
-        float labelBoundary = height * textTimeSplitRatio;
-        float textPadding = minDim * textPaddingRatio;
-        float strokeWidth = minDim * textStrokeRatio;
-
-        labelBound.set(
-            textPadding / 2,
-            textPadding / 2,
-            width - textPadding / 2,
-            labelBoundary - textPadding / 2
+        String timeText = String.format(
+            "%02d:%02d",
+            secondsLeft / 60,
+            secondsLeft % 60
         );
-        drawText(canvas, labels, label, labelBound, strokeWidth);
-
-        labelBound.set(
-            textPadding / 2,
-            labelBoundary + textPadding / 2,
-            width - textPadding / 2,
-            height - textPadding
-        );
-        drawText(
-            canvas,
-            timeStrings,
-            String.format("%02d:%02d", secondsLeft / 60, secondsLeft % 60),
-            labelBound,
-            strokeWidth
-        );
+        drawText(canvas, timeText, timeFontSize, timeLabelBound);
     }
 
     private void drawText(
         Canvas canvas,
-        String[] options,
         String text,
-        RectF bounds,
-        float strokeWidth
+        float fontSize,
+        RectF bounds
     ) {
-        int maxWidth = 0;
-        int maxHeight = 0;
-        float textSize = 1;
-
-        while (maxWidth < bounds.width() && maxHeight < bounds.height()) {
-            textPaint.setTextSize(textSize);
-            for (String s : options) {
-                textPaint.getTextBounds(s, 0, s.length(), measuredSize);
-                if (measuredSize.width() > maxWidth) {
-                    maxWidth = measuredSize.width();
-                }
-                if (measuredSize.height() > maxHeight) {
-                    maxHeight = measuredSize.height();
-                }
-            }
-            textSize++;
-        }
-        textPaint.setTextSize(textSize - 2);
+        textPaint.setTextSize(fontSize);
+        textPaint.setAntiAlias(true);
+        textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.getTextBounds(text, 0, text.length(), measuredSize);
 
+        textPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        textPaint.setStrokeWidth(textStrokeRatio * measuredSize.height());
         textPaint.setColor(
-            getContext().getResources().getColor(R.color.text_color)
+            getContext().getResources().getColor(R.color.text_stroke_color)
         );
-        textPaint.setStyle(Paint.Style.FILL);
         canvas.drawText(
             text,
             bounds.left + (bounds.width() / 2),
@@ -201,11 +218,10 @@ public class ClockView extends View {
             textPaint
         );
 
+        textPaint.setStyle(Paint.Style.FILL);
         textPaint.setColor(
-            getContext().getResources().getColor(R.color.text_stroke_color)
+            getContext().getResources().getColor(R.color.text_color)
         );
-        textPaint.setStyle(Paint.Style.STROKE);
-        textPaint.setStrokeWidth(strokeWidth);
         canvas.drawText(
             text,
             bounds.left + (bounds.width() / 2),
