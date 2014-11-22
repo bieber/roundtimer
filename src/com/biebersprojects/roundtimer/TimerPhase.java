@@ -17,8 +17,6 @@
 
 package com.biebersprojects.roundtimer;
 
-import android.graphics.Color;
-
 public enum TimerPhase {
     PREP(
         R.string.prep_time_input_label,

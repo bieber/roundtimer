@@ -11,6 +11,8 @@
     <string name="rest_time_input_label">Rest Time</string>
     <string name="rest_time_timer_label">Rest</string>
 
+    <string name="round_label_format">Round %d</string>
+
     <string name="start_label">Start</string>
     <string name="pause_label">Pause</string>
 </resources>

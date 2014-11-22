@@ -42,14 +42,16 @@ public class Timer
         MediaPlayer.OnCompletionListener {
 
     private static final String PHASE_KEY = "PHASE";
+    private static final String ROUND_KEY = "ROUND";
     private static final String START_TIME_KEY = "START_TIME";
     private static final String PAUSED_TIME_KEY = "PAUSED_TIME";
     private static final String START_PAUSE_KEY = "START_PAUSE_LABEL";
 
     private Map<TimerPhase, Integer> times = new HashMap<TimerPhase, Integer>();
 
-    private float startTime = SystemClock.elapsedRealtime();
     private TimerPhase phase = TimerPhase.PREP;
+    private int round = 0;
+    private float startTime = SystemClock.elapsedRealtime();
     private float pausedTime = 0;
 
     private ScheduledFuture<?> ticker = null;
@@ -105,6 +107,8 @@ public class Timer
 
         Button startPauseButton = (Button)findViewById(R.id.startPauseButton);
         outState.putCharSequence(START_PAUSE_KEY, startPauseButton.getText());
+
+        outState.putInt(ROUND_KEY, round);
     }
 
     @Override
@@ -122,6 +126,8 @@ public class Timer
         startPauseButton.setText(
             savedInstanceState.getCharSequence(START_PAUSE_KEY)
         );
+
+        round = savedInstanceState.getInt(ROUND_KEY);
     }
 
     @Override
@@ -199,6 +205,7 @@ public class Timer
         }
         clock.setSecondsLeft(wholeSecondsLeft);
         clock.setPhase(phase);
+        clock.setRound(round);
 
         if (secondsLeft <= 0) {
             changePhase();
@@ -208,6 +215,9 @@ public class Timer
     private void changePhase() {
         startTime = SystemClock.elapsedRealtime();
         phase = phase.next();
+        if (phase == TimerPhase.ROUND) {
+            round++;
+        }
 
         int gotFocus = ((AudioManager)getSystemService(Context.AUDIO_SERVICE))
             .requestAudioFocus(
