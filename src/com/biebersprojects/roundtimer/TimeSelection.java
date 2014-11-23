@@ -19,21 +19,27 @@ package com.biebersprojects.roundtimer;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Pair;
 import android.view.View;
 import android.widget.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class TimeSelection
     extends Activity
-    implements SeekBar.OnSeekBarChangeListener, Button.OnClickListener {
+    implements
+        SeekBar.OnSeekBarChangeListener,
+        Button.OnClickListener,
+        AdapterView.OnItemClickListener {
 
     private static final Map<TimerPhase, TextView> outputLabels =
         new HashMap<TimerPhase, TextView>();
     private static final Map<TimerPhase, SeekBar> inputBars =
         new HashMap<TimerPhase, SeekBar>();
+
+    private List<Preset> presets = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -47,6 +53,10 @@ public class TimeSelection
 
         Button startButton = (Button)findViewById(R.id.startButton);
         startButton.setOnClickListener(this);
+
+        ListView presetView = (ListView)findViewById(R.id.presetView);
+        presetView.setOnItemClickListener(this);
+        loadPresets(presetView);
     }
 
     private void setupRow(TableLayout inputTable, TimerPhase phase) {
@@ -136,6 +146,32 @@ public class TimeSelection
         }
     }
 
+    @Override
+    public void onItemClick(
+        AdapterView<?> parent,
+        View view,
+        int position,
+        long id
+    ) {
+        Preset preset = presets.get(position);
+        for (Map.Entry<TimerPhase, Integer> t: preset.getTimes().entrySet()) {
+            setTime(t.getKey(), t.getValue());
+        }
+    }
+
+    private void loadPresets(ListView list) {
+        presets = Preset.defaultSet(this);
+        Collections.sort(presets);
+
+        list.setAdapter(
+            new ArrayAdapter<Preset>(
+                this,
+                android.R.layout.simple_list_item_1,
+                presets
+            )
+        );
+    }
+
     private void setTime(TimerPhase phase, int time) {
         time = snapToInterval(time, phase.getAdjustmentInterval());
         if (time == 0 && phase != TimerPhase.PREP) {
@@ -164,5 +200,4 @@ public class TimeSelection
     public void onStartTrackingTouch(SeekBar seekBar) {}
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {}
-
 }

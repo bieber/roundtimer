@@ -16,4 +16,10 @@
     <string name="start_label">Start</string>
     <string name="pause_label">Pause</string>
     <string name="screen_checkbox_label">Keep screen on</string>
+    <string name="presets_label">Presets:</string>
+
+    <string name="boxing_amateur">Boxing, Amateur</string>
+    <string name="boxing_pro">Boxing, Professional</string>
+    <string name="mma_amateur">MMA, Amateur</string>
+    <string name="mma_pro">MMA, Professional</string>
 </resources>

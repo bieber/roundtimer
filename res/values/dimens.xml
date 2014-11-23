@@ -8,5 +8,5 @@
     <dimen name="time_seekbar_left_margin">15dp</dimen>
     <dimen name="time_seekbar_right_margin">15dp</dimen>
 
-    <dimen name="start_button_margins">15dp</dimen>
+    <dimen name="standard_margin">15dp</dimen>
 </resources>
