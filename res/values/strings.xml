@@ -15,4 +15,5 @@
 
     <string name="start_label">Start</string>
     <string name="pause_label">Pause</string>
+    <string name="screen_checkbox_label">Keep screen on</string>
 </resources>

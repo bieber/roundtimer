@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+    android:gravity="center_vertical">
+
+    <view
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        class="com.biebersprojects.roundtimer.ClockView"
+        android:id="@+id/display"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal">
+
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/screen_checkbox_label"
+            android:id="@+id/keepScreenOnBox"
+            android:checked="true"
+            android:layout_weight="1" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/pause_label"
+            android:id="@+id/startPauseButton"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+</LinearLayout>
