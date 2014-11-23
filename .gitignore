@@ -10,3 +10,4 @@ build/
 local.properties
 .idea/workspace.xml
 .gradle
+key.jks
