@@ -18,13 +18,16 @@
 package com.biebersprojects.roundtimer;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Pair;
-import android.view.View;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.*;
 import android.widget.*;
 
+import java.io.*;
 import java.util.*;
 
 public class TimeSelection
@@ -33,6 +36,8 @@ public class TimeSelection
         SeekBar.OnSeekBarChangeListener,
         Button.OnClickListener,
         AdapterView.OnItemClickListener {
+
+    private static final String PRESETS_FILE = "presets";
 
     private static final Map<TimerPhase, TextView> outputLabels =
         new HashMap<TimerPhase, TextView>();
@@ -54,9 +59,13 @@ public class TimeSelection
         Button startButton = (Button)findViewById(R.id.startButton);
         startButton.setOnClickListener(this);
 
+        Button addPresetButton = (Button)findViewById(R.id.addPresetButton);
+        addPresetButton.setOnClickListener(this);
+
         ListView presetView = (ListView)findViewById(R.id.presetView);
         presetView.setOnItemClickListener(this);
-        loadPresets(presetView);
+        loadPresets();
+        registerForContextMenu(presetView);
     }
 
     private void setupRow(TableLayout inputTable, TimerPhase phase) {
@@ -143,7 +152,100 @@ public class TimeSelection
                 );
             }
             startActivity(timer);
+        } else if (v.getId() == R.id.addPresetButton) {
+            startAddDialog();
         }
+    }
+
+    private void startAddDialog() {
+        LinearLayout outer = new LinearLayout(this);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        );
+
+        int margin =
+            (int)getResources().getDimension(R.dimen.dialog_margin);
+        params.setMargins(margin, margin, margin, margin);
+
+        final EditText textBox = new EditText(this);
+        textBox.setLayoutParams(params);
+        outer.addView(textBox);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder
+            .setMessage(getResources().getString(R.string.add_preset_title))
+            .setView(outer);
+
+        builder.setPositiveButton(
+            R.string.add_preset_label,
+            new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {}
+            }
+        );
+
+        builder.setNegativeButton(
+            R.string.cancel_preset_label,
+            new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {}
+            }
+        );
+
+        final AlertDialog dialog = builder.create();
+        dialog.show();
+
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (textBox.getText().length() != 0) {
+                        addPreset(textBox.getText().toString());
+                        dialog.dismiss();
+                    }
+                }
+            }
+        );
+        textBox.addTextChangedListener(
+            new TextWatcher() {
+                @Override
+                public void beforeTextChanged(
+                    CharSequence s,
+                    int start,
+                    int count,
+                    int after
+                ) {}
+
+                @Override
+                public void onTextChanged(
+                    CharSequence s,
+                    int start,
+                    int before,
+                    int count
+                ) {
+                    dialog
+                        .getButton(AlertDialog.BUTTON_POSITIVE)
+                        .setEnabled(s.length() != 0);
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            }
+        );
+    }
+
+    private void addPreset(String name) {
+        Map<TimerPhase, Integer> times = new HashMap<TimerPhase, Integer>();
+        for (TimerPhase p: TimerPhase.values()) {
+            times.put(
+                p,
+                getPreferences(MODE_PRIVATE).getInt(p.getConfigKey(), 0)
+            );
+        }
+        presets.add(new Preset(name, times));
+        updatePresets();
     }
 
     @Override
@@ -159,10 +261,52 @@ public class TimeSelection
         }
     }
 
-    private void loadPresets(ListView list) {
-        presets = Preset.defaultSet(this);
-        Collections.sort(presets);
+    @Override
+    public void onCreateContextMenu(
+        ContextMenu menu,
+        View v,
+        ContextMenu.ContextMenuInfo menuInfo
+    ) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.preset, menu);
+    }
 
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.deletePreset) {
+            AdapterView.AdapterContextMenuInfo info =
+                (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+
+            presets.remove(info.position);
+            updatePresets();
+            return true;
+        }
+        return super.onContextItemSelected(item);
+    }
+
+    private void loadPresets() {
+        try {
+            InputStream fin = openFileInput(PRESETS_FILE);
+            ObjectInput oin = new ObjectInputStream(fin);
+            presets = (List<Preset>)oin.readObject();
+        } catch (FileNotFoundException e) {
+            presets = Preset.defaultSet(this);
+        } catch (StreamCorruptedException e) {
+            presets = Preset.defaultSet(this);
+        } catch (IOException e) {
+            presets = Preset.defaultSet(this);
+        } catch (ClassNotFoundException e) {
+            presets = Preset.defaultSet(this);
+        } catch (ClassCastException e) {
+            presets = Preset.defaultSet(this);
+        }
+        updatePresets();
+    }
+
+    private void updatePresets() {
+        Collections.sort(presets);
+        ListView list = (ListView)findViewById(R.id.presetView);
         list.setAdapter(
             new ArrayAdapter<Preset>(
                 this,
@@ -170,6 +314,17 @@ public class TimeSelection
                 presets
             )
         );
+
+        try {
+            OutputStream fout = openFileOutput(PRESETS_FILE, MODE_PRIVATE);
+            ObjectOutput oout = new ObjectOutputStream(fout);
+            oout.writeObject(presets);
+            fout.close();
+        } catch (FileNotFoundException e) {
+            // This shouldn't be able to happen opening an output file
+        } catch (IOException e) {
+            // Not really anything constructive we can do here
+        }
     }
 
     private void setTime(TimerPhase phase, int time) {

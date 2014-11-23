@@ -3,12 +3,10 @@ package com.biebersprojects.roundtimer;
 import android.content.Context;
 import android.content.res.Resources;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.Serializable;
+import java.util.*;
 
-public class Preset implements Comparable<Preset> {
+public class Preset implements Comparable<Preset>, Serializable {
     private String name;
     private Map<TimerPhase, Integer> times;
 
@@ -56,22 +54,24 @@ public class Preset implements Comparable<Preset> {
         mmaAmateurTimes.put(TimerPhase.ROUND, 180);
         mmaAmateurTimes.put(TimerPhase.REST, 60);
 
-        return Arrays.asList(
-            new Preset(
-                resources.getString(R.string.boxing_pro),
-                boxingProTimes
-            ),
-            new Preset(
-                resources.getString(R.string.boxing_amateur),
-                boxingAmateurTimes
-            ),
-            new Preset(
-                resources.getString(R.string.mma_pro),
-                mmaProTimes
-            ),
-            new Preset(
-                resources.getString(R.string.mma_amateur),
-                mmaAmateurTimes
+        return new ArrayList<Preset>(
+            Arrays.asList(
+                new Preset(
+                    resources.getString(R.string.boxing_pro),
+                    boxingProTimes
+                ),
+                new Preset(
+                    resources.getString(R.string.boxing_amateur),
+                    boxingAmateurTimes
+                ),
+                new Preset(
+                    resources.getString(R.string.mma_pro),
+                    mmaProTimes
+                ),
+                new Preset(
+                    resources.getString(R.string.mma_amateur),
+                    mmaAmateurTimes
+                )
             )
         );
     }
