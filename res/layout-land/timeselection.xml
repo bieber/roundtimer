@@ -14,7 +14,8 @@
         <TableLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content" android:layout_gravity="center_horizontal"
-            android:id="@+id/inputTable">
+            android:id="@+id/inputTable"
+            android:layout_weight="0">
 
         </TableLayout>
 
@@ -22,7 +23,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="@string/start_label"
-            android:id="@+id/startButton" android:layout_weight="1"
+            android:id="@+id/startButton" android:layout_weight="0"
             android:layout_marginLeft="@dimen/standard_margin"
             android:layout_marginRight="@dimen/standard_margin"
             android:layout_marginTop="@dimen/standard_margin" />
@@ -34,40 +35,30 @@
         android:layout_height="wrap_content"
         android:layout_weight="1">
 
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="@string/presets_label"
-                android:id="@+id/textView"
-                android:layout_marginLeft="@dimen/standard_margin" />
-
-            <View
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
-
-            <Button
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/add_preset_label"
-                android:id="@+id/addPresetButton" />
-        </LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="@string/presets_label"
+            android:id="@+id/textView"
+            android:layout_marginLeft="@dimen/standard_margin" />
 
         <ListView
             android:layout_width="match_parent"
             android:layout_height="fill_parent"
             android:id="@+id/presetView"
-            android:layout_gravity="center_horizontal"
             android:layout_weight="1"
             android:layout_marginLeft="@dimen/standard_margin"
             android:layout_marginRight="@dimen/standard_margin" />
+
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/add_preset_label"
+            android:id="@+id/addPresetButton"
+            android:layout_weight="0"/>
+
     </LinearLayout>
 
 </LinearLayout>

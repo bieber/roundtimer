@@ -17,7 +17,7 @@
     <string name="pause_label">Pause</string>
     <string name="screen_checkbox_label">Keep screen on</string>
     <string name="presets_label">Presets:</string>
-    <string name="add_preset_label">Add</string>
+    <string name="add_preset_label">Add Preset</string>
     <string name="add_preset_title">Enter Preset Name</string>
     <string name="cancel_preset_label">Cancel</string>
     <string name="delete_preset_label">Delete</string>
